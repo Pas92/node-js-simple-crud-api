@@ -5,6 +5,7 @@ import {
   STATUS_CODES,
 } from 'node:http';
 import * as dotenv from 'dotenv';
+import * as uuid from 'uuid';
 
 dotenv.config();
 
@@ -20,12 +21,35 @@ interface UserFullData extends User {
 
 const users: UserFullData[] = [];
 
+const isInvalidUrl = (urlParts: string[]): boolean =>
+  urlParts[0] !== 'api' || urlParts[1] !== 'users';
+
+const isInvalidUserData = (user: User): boolean => {
+  const objKeys: string[] = Object.keys(user);
+  if (objKeys.length !== 3) {
+    return true;
+  }
+
+  if (
+    !(
+      objKeys.includes('username') &&
+      objKeys.includes('age') &&
+      objKeys.includes('hobbies')
+    )
+  ) {
+    return true;
+  }
+
+  return false;
+};
+
 const listenServer = (req: IncomingMessage, res: ServerResponse) => {
   console.log('Hi! I am a server');
   const urlParts: string[] = req.url?.slice(1).split('/') || [];
   console.log(urlParts);
 
-  if (urlParts[0] !== 'api' || urlParts[1] !== 'users') {
+  if (isInvalidUrl(urlParts)) {
+    res.writeHead(404);
     res.statusCode = 404;
     res.statusMessage = STATUS_CODES[404] || 'Not Found';
     res.end();
@@ -46,8 +70,68 @@ const listenServer = (req: IncomingMessage, res: ServerResponse) => {
       break;
     }
     case req.method === 'POST' && urlParts.length === 2: {
-      // TODO: check is valid user data
-      // TODO: create new user
+      let dataFromClient = '';
+
+      req.on('data', (chunk: string) => {
+        dataFromClient += chunk;
+      });
+
+      req.on('end', () => {
+        console.log(dataFromClient);
+
+        let user: User;
+
+        try {
+          user = JSON.parse(dataFromClient);
+
+          if (isInvalidUserData(user)) {
+            res.statusCode = 400;
+            res.statusMessage =
+              'Invalid user data! Body does not contain required fields!';
+            res.end();
+          }
+
+          if (typeof user.age !== 'number') {
+            res.statusCode = 400;
+            res.statusMessage =
+              'Invalid user data! Age field should be a number!';
+            res.end();
+          }
+
+          if (typeof user.username !== 'string') {
+            res.statusCode = 400;
+            res.statusMessage =
+              'Invalid user data! Username field should be a string!';
+            res.end();
+          }
+
+          if (!Array.isArray(user.hobbies)) {
+            res.statusCode = 400;
+            res.statusMessage =
+              'Invalid user data! Hobbies field should be an array!';
+            res.end();
+          }
+
+          const dbUser: UserFullData = {
+            ...user,
+            id: uuid.v4(),
+          };
+
+          users.push(dbUser);
+
+          console.log(users);
+
+          res.setHeader('Content-Type', 'application/json');
+          res.writeHead(200);
+          res.end(JSON.stringify(dbUser));
+        } catch (error) {
+          res.statusCode = 400;
+          res.statusMessage = 'Invalid JSON data!';
+          res.end();
+        }
+        // TODO: check is valid user data
+        // TODO: create new user
+      });
       break;
     }
     case req.method === 'PUT' && urlParts.length === 3: {
@@ -56,7 +140,7 @@ const listenServer = (req: IncomingMessage, res: ServerResponse) => {
       // TODO: update user data
       break;
     }
-    case req.method === 'PUT' && urlParts.length === 3: {
+    case req.method === 'DELETE' && urlParts.length === 3: {
       // TODO: check ID
       // TODO: check if user is exist
       // TODO: update user data
@@ -68,7 +152,6 @@ const listenServer = (req: IncomingMessage, res: ServerResponse) => {
       res.end();
     }
   }
-  res.end();
 };
 
 const server = createServer(listenServer);
