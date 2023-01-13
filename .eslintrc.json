@@ -6,7 +6,7 @@
   "extends": [
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended",
-    "prettier/@typescript-eslint",
+    "prettier",
     "plugin:prettier/recommended"
   ],
   "overrides": [],
@@ -17,9 +17,31 @@
   },
   "plugins": ["@typescript-eslint"],
   "rules": {
-    "indent": ["error", 2],
-    "linebreak-style": ["error", "windows"],
-    "quotes": ["error", "single"],
-    "semi": ["error", "always"]
+    "quotes": [
+      "error",
+      "single"
+    ],
+    "semi": [
+      "error",
+      "always"
+    ],
+    "prettier/prettier": [
+      "error",
+      {
+        "plugins": ["./node_modules/prettier-plugin-multiline-arrays"],
+        "tabWidth": 2,
+        "useTabs": false,
+        "singleQuote": true,
+        "semi": true,
+        "bracketSpacing": true,
+        "arrowParens": "avoid",
+        "trailingComma": "es5",
+        "bracketSameLine": true,
+        "singleAttributePerLine": true,
+        "printWidth": 80,
+        "endOfLine": "auto"
+      }
+    ],
+    "no-console": "warn"
   }
 }
