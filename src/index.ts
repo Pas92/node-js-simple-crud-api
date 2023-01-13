@@ -77,8 +77,6 @@ const listenServer = (req: IncomingMessage, res: ServerResponse) => {
       });
 
       req.on('end', () => {
-        console.log(dataFromClient);
-
         let user: User;
 
         try {
@@ -135,6 +133,82 @@ const listenServer = (req: IncomingMessage, res: ServerResponse) => {
       break;
     }
     case req.method === 'PUT' && urlParts.length === 3: {
+      const userId = urlParts[2];
+
+      if (!uuid.validate(userId)) {
+        res.statusCode = 400;
+        res.statusMessage = 'Invalid user ID!';
+        res.end();
+      }
+
+      const userIndex = users.findIndex(user => user.id === userId);
+
+      if (userIndex === -1) {
+        res.statusCode = 400;
+        res.statusMessage = `User with ID ${userId} does not exist`;
+        res.end();
+      }
+
+      //TODO
+
+      let dataFromClient = '';
+
+      req.on('data', (chunk: string) => {
+        dataFromClient += chunk;
+      });
+
+      req.on('end', () => {
+        let user: User;
+
+        try {
+          user = JSON.parse(dataFromClient);
+
+          if (isInvalidUserData(user)) {
+            res.statusCode = 400;
+            res.statusMessage =
+              'Invalid user data! Body does not contain required fields!';
+            res.end();
+          }
+
+          if (typeof user.age !== 'number') {
+            res.statusCode = 400;
+            res.statusMessage =
+              'Invalid user data! Age field should be a number!';
+            res.end();
+          }
+
+          if (typeof user.username !== 'string') {
+            res.statusCode = 400;
+            res.statusMessage =
+              'Invalid user data! Username field should be a string!';
+            res.end();
+          }
+
+          if (!Array.isArray(user.hobbies)) {
+            res.statusCode = 400;
+            res.statusMessage =
+              'Invalid user data! Hobbies field should be an array!';
+            res.end();
+          }
+
+          users.splice(userIndex, 1);
+
+          console.log(users);
+
+          res.setHeader('Content-Type', 'application/json');
+          res.writeHead(200);
+          res.end(JSON.stringify(user));
+        } catch (error) {
+          res.statusCode = 400;
+          res.statusMessage = 'Invalid JSON data!';
+          res.end();
+        }
+
+        // TODO: check is valid user data
+        // TODO: create new user
+      });
+
+      res.end();
       // TODO: check ID
       // TODO: check if user is exist
       // TODO: update user data
