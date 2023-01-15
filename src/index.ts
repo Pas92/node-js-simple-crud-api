@@ -46,7 +46,6 @@ const isInvalidUserData = (user: User): boolean => {
 const listenServer = (req: IncomingMessage, res: ServerResponse) => {
   console.log('Hi! I am a server');
   const urlParts: string[] = req.url?.slice(1).split('/') || [];
-  console.log(urlParts);
 
   if (isInvalidUrl(urlParts)) {
     res.writeHead(404);
@@ -64,6 +63,26 @@ const listenServer = (req: IncomingMessage, res: ServerResponse) => {
       break;
     }
     case req.method === 'GET' && urlParts.length === 3: {
+      const userId = urlParts[2];
+
+      if (!uuid.validate(userId)) {
+        res.statusCode = 400;
+        res.statusMessage = 'Invalid user ID!';
+        res.end();
+      }
+
+      const userIndex = users.findIndex(user => user.id === userId);
+
+      if (userIndex === -1) {
+        res.statusCode = 400;
+        res.statusMessage = `User with ID ${userId} does not exist`;
+        res.end();
+      }
+
+      res.writeHead(200, {
+        'Content-Type': 'application/json',
+      });
+      res.end(JSON.stringify(users[userIndex]));
       // TODO: check ID
       // TODO: check if user is exist
       // TODO: return user
@@ -191,7 +210,12 @@ const listenServer = (req: IncomingMessage, res: ServerResponse) => {
             res.end();
           }
 
-          users.splice(userIndex, 1);
+          const userFullData: UserFullData = {
+            ...user,
+            id: userId,
+          };
+
+          users.splice(userIndex, 1, userFullData);
 
           console.log(users);
 
@@ -203,18 +227,34 @@ const listenServer = (req: IncomingMessage, res: ServerResponse) => {
           res.statusMessage = 'Invalid JSON data!';
           res.end();
         }
-
-        // TODO: check is valid user data
-        // TODO: create new user
       });
-
-      res.end();
       // TODO: check ID
       // TODO: check if user is exist
       // TODO: update user data
       break;
     }
     case req.method === 'DELETE' && urlParts.length === 3: {
+      const userId = urlParts[2];
+
+      if (!uuid.validate(userId)) {
+        res.statusCode = 400;
+        res.statusMessage = 'Invalid user ID!';
+        res.end();
+      }
+
+      const userIndex = users.findIndex(user => user.id === userId);
+
+      if (userIndex === -1) {
+        res.statusCode = 400;
+        res.statusMessage = `User with ID ${userId} does not exist`;
+        res.end();
+      }
+
+      users.splice(userIndex, 1);
+      console.log(users);
+
+      res.writeHead(204);
+      res.end();
       // TODO: check ID
       // TODO: check if user is exist
       // TODO: update user data
