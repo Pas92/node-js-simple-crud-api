@@ -44,7 +44,6 @@ const isInvalidUserData = (user: User): boolean => {
 };
 
 const listenServer = (req: IncomingMessage, res: ServerResponse) => {
-  console.log('Hi! I am a server');
   const urlParts: string[] = req.url?.slice(1).split('/') || [];
 
   if (isInvalidUrl(urlParts)) {
@@ -83,9 +82,6 @@ const listenServer = (req: IncomingMessage, res: ServerResponse) => {
         'Content-Type': 'application/json',
       });
       res.end(JSON.stringify(users[userIndex]));
-      // TODO: check ID
-      // TODO: check if user is exist
-      // TODO: return user
       break;
     }
     case req.method === 'POST' && urlParts.length === 2: {
@@ -136,8 +132,6 @@ const listenServer = (req: IncomingMessage, res: ServerResponse) => {
 
           users.push(dbUser);
 
-          console.log(users);
-
           res.setHeader('Content-Type', 'application/json');
           res.writeHead(200);
           res.end(JSON.stringify(dbUser));
@@ -146,8 +140,6 @@ const listenServer = (req: IncomingMessage, res: ServerResponse) => {
           res.statusMessage = 'Invalid JSON data!';
           res.end();
         }
-        // TODO: check is valid user data
-        // TODO: create new user
       });
       break;
     }
@@ -167,8 +159,6 @@ const listenServer = (req: IncomingMessage, res: ServerResponse) => {
         res.statusMessage = `User with ID ${userId} does not exist`;
         res.end();
       }
-
-      //TODO
 
       let dataFromClient = '';
 
@@ -217,8 +207,6 @@ const listenServer = (req: IncomingMessage, res: ServerResponse) => {
 
           users.splice(userIndex, 1, userFullData);
 
-          console.log(users);
-
           res.setHeader('Content-Type', 'application/json');
           res.writeHead(200);
           res.end(JSON.stringify(user));
@@ -228,9 +216,6 @@ const listenServer = (req: IncomingMessage, res: ServerResponse) => {
           res.end();
         }
       });
-      // TODO: check ID
-      // TODO: check if user is exist
-      // TODO: update user data
       break;
     }
     case req.method === 'DELETE' && urlParts.length === 3: {
@@ -251,13 +236,9 @@ const listenServer = (req: IncomingMessage, res: ServerResponse) => {
       }
 
       users.splice(userIndex, 1);
-      console.log(users);
 
       res.writeHead(204);
       res.end();
-      // TODO: check ID
-      // TODO: check if user is exist
-      // TODO: update user data
       break;
     }
     default: {
@@ -268,7 +249,13 @@ const listenServer = (req: IncomingMessage, res: ServerResponse) => {
   }
 };
 
-const server = createServer(listenServer);
+const server = createServer((req, res) => {
+  try {
+    listenServer(req, res);
+  } catch (error) {
+    res.writeHead(500);
+    res.end();
+  }
+});
 
 server.listen(process.env.port || 3000);
-console.log('Hi all!');
