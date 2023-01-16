@@ -88,6 +88,7 @@ export const listenServer = (req: IncomingMessage, res: ServerResponse) => {
 
         try {
           user = JSON.parse(dataFromClient);
+          console.log('listener:', user);
 
           if (isInvalidUserData(user)) {
             res.statusCode = 400;

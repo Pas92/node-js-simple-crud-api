@@ -6,6 +6,7 @@
     "dev": "nodemon",
     "build": "tsc",
     "start": "ts-node src/index.ts",
+    "start:multi": "ts-node src/multi.ts",
     "lint": "npx eslint .",
     "lint:fix": "npx eslint . --fix"
   },

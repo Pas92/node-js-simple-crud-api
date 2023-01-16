@@ -1,6 +1,6 @@
 {
   "ignore": ["node_modules"],
-  "watch": ["./src/index.ts"],
-  "exec": "npm start",
+  "watch": ["./src/multi.ts"],
+  "exec": "npm run start:multi",
   "ext": "ts"
 }
