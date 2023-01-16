@@ -1,17 +1,9 @@
 import { IncomingMessage, ServerResponse, STATUS_CODES } from 'node:http';
 import * as uuid from 'uuid';
+import { User, UserFullData } from './db';
+import { MultiDatabase } from './multi';
 
-interface User {
-  username: string;
-  age: number;
-  hobbies: string[];
-}
-
-interface UserFullData extends User {
-  id: string;
-}
-
-const users: UserFullData[] = [];
+const mainDatabase: UserFullData[] = [];
 
 const isInvalidUrl = (urlParts: string[]): boolean =>
   urlParts[0] !== 'api' || urlParts[1] !== 'users';
@@ -35,8 +27,13 @@ const isInvalidUserData = (user: User): boolean => {
   return false;
 };
 
-export const listenServer = (req: IncomingMessage, res: ServerResponse) => {
+export const listenServer = (
+  req: IncomingMessage,
+  res: ServerResponse,
+  workerDb?: MultiDatabase
+) => {
   const urlParts: string[] = req.url?.slice(1).split('/') || [];
+  const usersDatabase = workerDb?.users || mainDatabase;
 
   if (isInvalidUrl(urlParts)) {
     res.writeHead(404);
@@ -50,7 +47,11 @@ export const listenServer = (req: IncomingMessage, res: ServerResponse) => {
     case req.method === 'GET' && urlParts.length === 2: {
       res.setHeader('Content-Type', 'application/json');
       res.writeHead(200);
-      res.end(JSON.stringify(users));
+      res.end(JSON.stringify(usersDatabase));
+
+      if (workerDb) {
+        process.send?.(usersDatabase);
+      }
       break;
     }
     case req.method === 'GET' && urlParts.length === 3: {
@@ -62,7 +63,7 @@ export const listenServer = (req: IncomingMessage, res: ServerResponse) => {
         res.end();
       }
 
-      const userIndex = users.findIndex(user => user.id === userId);
+      const userIndex = usersDatabase.findIndex(user => user.id === userId);
 
       if (userIndex === -1) {
         res.statusCode = 400;
@@ -73,7 +74,11 @@ export const listenServer = (req: IncomingMessage, res: ServerResponse) => {
       res.writeHead(200, {
         'Content-Type': 'application/json',
       });
-      res.end(JSON.stringify(users[userIndex]));
+      res.end(JSON.stringify(usersDatabase[userIndex]));
+
+      if (workerDb) {
+        process.send?.(usersDatabase);
+      }
       break;
     }
     case req.method === 'POST' && urlParts.length === 2: {
@@ -88,7 +93,6 @@ export const listenServer = (req: IncomingMessage, res: ServerResponse) => {
 
         try {
           user = JSON.parse(dataFromClient);
-          console.log('listener:', user);
 
           if (isInvalidUserData(user)) {
             res.statusCode = 400;
@@ -123,11 +127,15 @@ export const listenServer = (req: IncomingMessage, res: ServerResponse) => {
             id: uuid.v4(),
           };
 
-          users.push(dbUser);
+          usersDatabase.push(dbUser);
 
           res.setHeader('Content-Type', 'application/json');
           res.writeHead(200);
           res.end(JSON.stringify(dbUser));
+
+          if (workerDb) {
+            process.send?.(usersDatabase);
+          }
         } catch (error) {
           res.statusCode = 400;
           res.statusMessage = 'Invalid JSON data!';
@@ -145,7 +153,7 @@ export const listenServer = (req: IncomingMessage, res: ServerResponse) => {
         res.end();
       }
 
-      const userIndex = users.findIndex(user => user.id === userId);
+      const userIndex = usersDatabase.findIndex(user => user.id === userId);
 
       if (userIndex === -1) {
         res.statusCode = 400;
@@ -198,11 +206,15 @@ export const listenServer = (req: IncomingMessage, res: ServerResponse) => {
             id: userId,
           };
 
-          users.splice(userIndex, 1, userFullData);
+          usersDatabase.splice(userIndex, 1, userFullData);
 
           res.setHeader('Content-Type', 'application/json');
           res.writeHead(200);
           res.end(JSON.stringify(user));
+
+          if (workerDb) {
+            process.send?.(usersDatabase);
+          }
         } catch (error) {
           res.statusCode = 400;
           res.statusMessage = 'Invalid JSON data!';
@@ -220,7 +232,7 @@ export const listenServer = (req: IncomingMessage, res: ServerResponse) => {
         res.end();
       }
 
-      const userIndex = users.findIndex(user => user.id === userId);
+      const userIndex = usersDatabase.findIndex(user => user.id === userId);
 
       if (userIndex === -1) {
         res.statusCode = 400;
@@ -228,10 +240,14 @@ export const listenServer = (req: IncomingMessage, res: ServerResponse) => {
         res.end();
       }
 
-      users.splice(userIndex, 1);
+      usersDatabase.splice(userIndex, 1);
 
       res.writeHead(204);
       res.end();
+
+      if (workerDb) {
+        process.send?.(usersDatabase);
+      }
       break;
     }
     default: {

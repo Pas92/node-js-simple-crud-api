@@ -1,8 +1,8 @@
 import { createServer } from 'node:http';
-import * as dotenv from 'dotenv';
+import 'dotenv/config';
 import { listenServer } from './listener';
 
-dotenv.config();
+// config();
 
 const server = createServer((req, res) => {
   try {
