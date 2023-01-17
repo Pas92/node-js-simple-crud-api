@@ -1,10 +1,6 @@
 {
-  "ignore": [
-    "node_modules"
-  ],
-  "watch": [
-    "./src/**/*"
-  ],
-  "exec": "npm run start",
+  "ignore": ["node_modules"],
+  "watch": ["./src/**/*"],
+  "exec": "npm run start:prod",
   "ext": "ts"
 }

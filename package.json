@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon",
+    "start:dev": "nodemon",
     "build": "tsc",
-    "start": "ts-node src/index.ts",
+    "start:prod": "ts-node src/index.ts",
     "start:multi": "ts-node src/multi.ts",
     "lint": "npx eslint .",
     "lint:fix": "npx eslint . --fix"
